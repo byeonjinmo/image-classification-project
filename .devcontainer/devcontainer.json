@@ -1,0 +1,33 @@
+{
+    "name": "Image Classification Environment",
+    "image": "mcr.microsoft.com/devcontainers/python:3.9",
+    "postCreateCommand": "pip install torch torchvision scikit-learn matplotlib seaborn pandas tqdm pillow",
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "ms-python.python",
+                "ms-toolsai.jupyter",
+                "ms-python.vscode-pylance"
+            ],
+            "settings": {
+                "python.defaultInterpreterPath": "/usr/local/bin/python",
+                "python.formatting.provider": "black",
+                "editor.formatOnSave": true,
+                "python.linting.enabled": true,
+                "python.linting.pylintEnabled": true
+            }
+        }
+    },
+    "forwardPorts": [],
+    "features": {
+        "nvidia-cuda": {
+            "installCudnn": true,
+            "installNvtx": true,
+            "cudaVersion": "11.8",
+            "cudnnVersion": "8"
+        }
+    },
+    "hostRequirements": {
+        "memory": "8gb"
+    }
+}
