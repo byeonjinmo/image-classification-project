@@ -1,7 +1,7 @@
 {
     "name": "Image Classification Environment",
-    "image": "mcr.microsoft.com/devcontainers/python:3.9",
-    "postCreateCommand": "pip install torch torchvision scikit-learn matplotlib seaborn pandas tqdm pillow",
+    "image": "mcr.microsoft.com/devcontainers/python:3.9-bullseye",
+    "postCreateCommand": "pip install -r requirements.txt",
     "customizations": {
         "vscode": {
             "extensions": [
