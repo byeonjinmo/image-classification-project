@@ -7,12 +7,13 @@ from torchvision import transforms, models
 import matplotlib.pyplot as plt
 import numpy as np
 from PIL import Image
-from sklearn.metrics import confusion_matrix, classification_report
+from sklearn.metrics import confusion_matrix, classification_report, roc_curve, auc, roc_auc_score
 import seaborn as sns
 from tqdm import tqdm
 import pandas as pd
 import matplotlib.cm as cm
 from sklearn.manifold import TSNE
+from itertools import cycle
 
 class ImageDataset(Dataset):
     """Custom Dataset for loading images from a folder."""
@@ -362,6 +363,7 @@ class ImageClassifier:
         self.model.eval()
         all_preds = []
         all_labels = []
+        all_scores = []  # 추가: 예측 점수(확률) 저장
         self.features = []
         self.true_labels = []
         
@@ -370,11 +372,20 @@ class ImageClassifier:
             for inputs, labels in tqdm(self.val_loader, desc="Evaluating"):
                 inputs, labels = inputs.to(self.device), labels.to(self.device)
                 outputs = self.model(inputs)
+                
+                # 소프트맥스 확률 계산
+                probabilities = torch.softmax(outputs, dim=1)
+                
+                # 최대 확률의 클래스 예측
                 _, preds = torch.max(outputs, 1)
                 
                 all_preds.extend(preds.cpu().numpy())
                 all_labels.extend(labels.cpu().numpy())
+                all_scores.append(probabilities.cpu().numpy())  # 클래스별 확률 저장
                 self.true_labels.extend(labels.cpu().numpy())
+        
+        # 모든 예측 점수를 numpy 배열로 변환
+        all_scores = np.vstack(all_scores)
         
         # Generate confusion matrix
         self._plot_confusion_matrix(all_labels, all_preds)
@@ -389,6 +400,9 @@ class ImageClassifier:
         # Save classification report as CSV
         report_df = pd.DataFrame(report).transpose()
         report_df.to_csv(os.path.join(self.output_dir, 'classification_report.csv'))
+        
+        # ROC 커브 및 AUC 계산 및 시각화
+        self._plot_roc_curves(all_labels, all_scores)
         
         # Plot t-SNE visualization of features
         self._plot_tsne_visualization()
@@ -418,6 +432,110 @@ class ImageClassifier:
         plt.savefig(os.path.join(self.output_dir, 'confusion_matrix.png'))
         plt.close()
         print(f"Confusion matrix saved to {os.path.join(self.output_dir, 'confusion_matrix.png')}")
+    
+    def _plot_roc_curves(self, true_labels, pred_scores):
+        """Plot ROC curves and calculate AUC for each class.
+        
+        Args:
+            true_labels (list): 진제 레이블 리스트
+            pred_scores (numpy.ndarray): 클래스별 예측 확률 (shape: [n_samples, n_classes])
+        """
+        print("Generating ROC curves and calculating AUC...")
+        
+        # 데이터 준비
+        n_classes = len(self.class_names)
+        
+        # OneHotEncoding으로 변환
+        true_labels_onehot = np.zeros((len(true_labels), n_classes))
+        for i, label in enumerate(true_labels):
+            true_labels_onehot[i, label] = 1
+        
+        # 각 클래스별 ROC 커브 계산
+        fpr = {}
+        tpr = {}
+        roc_auc = {}
+        
+        for i in range(n_classes):
+            fpr[i], tpr[i], _ = roc_curve(true_labels_onehot[:, i], pred_scores[:, i])
+            roc_auc[i] = auc(fpr[i], tpr[i])
+        
+        # micro-average ROC 커브 계산 (각 예제를 독립적으로 고려)
+        fpr["micro"], tpr["micro"], _ = roc_curve(true_labels_onehot.ravel(), pred_scores.ravel())
+        roc_auc["micro"] = auc(fpr["micro"], tpr["micro"])
+        
+        # macro-average ROC 커브 계산 (모든 클래스의 평균)
+        all_fpr = np.unique(np.concatenate([fpr[i] for i in range(n_classes)]))
+        mean_tpr = np.zeros_like(all_fpr)
+        
+        for i in range(n_classes):
+            mean_tpr += np.interp(all_fpr, fpr[i], tpr[i])
+            
+        mean_tpr /= n_classes
+        
+        fpr["macro"] = all_fpr
+        tpr["macro"] = mean_tpr
+        roc_auc["macro"] = auc(fpr["macro"], tpr["macro"])
+        
+        # ROC 커브 시각화
+        plt.figure(figsize=(12, 10))
+        
+        # 매크로 및 마이크로 평균 그리기
+        plt.plot(fpr["micro"], tpr["micro"],
+                label=f'micro-average ROC (AUC = {roc_auc["micro"]:.2f})',
+                color='deeppink', linestyle=':', linewidth=4)
+                
+        plt.plot(fpr["macro"], tpr["macro"],
+                label=f'macro-average ROC (AUC = {roc_auc["macro"]:.2f})',
+                color='navy', linestyle=':', linewidth=4)
+        
+        # 각 클래스별 ROC 커브 그리기
+        colors = cycle(['aqua', 'darkorange', 'cornflowerblue', 'green', 'red', 'purple', 'brown', 'pink', 'gray', 'olive'])
+        
+        for i, color in zip(range(n_classes), colors):
+            plt.plot(fpr[i], tpr[i], color=color, lw=2,
+                    label=f'{self.class_names[i]} (AUC = {roc_auc[i]:.2f})')
+        
+        # 그래프 꾸미기
+        plt.plot([0, 1], [0, 1], 'k--', lw=2)
+        plt.xlim([0.0, 1.0])
+        plt.ylim([0.0, 1.05])
+        plt.xlabel('False Positive Rate', fontsize=12)
+        plt.ylabel('True Positive Rate', fontsize=12)
+        plt.title('Receiver Operating Characteristic (ROC) Curves', fontsize=14)
+        plt.legend(loc="lower right", fontsize=10)
+        plt.grid(True, linestyle='--', alpha=0.7)
+        
+        # AUC 점수 테이블 추가
+        auc_table = pd.DataFrame({
+            'Class': [self.class_names[i] for i in range(n_classes)] + ['Micro Average', 'Macro Average'],
+            'AUC': [roc_auc[i] for i in range(n_classes)] + [roc_auc['micro'], roc_auc['macro']]
+        })
+        
+        # 테이블 형태로 드로잉
+        table_ax = plt.axes([0.15, 0.02, 0.7, 0.2], frameon=True)  # [left, bottom, width, height]
+        table_ax.axis('off')
+        
+        table = table_ax.table(
+            cellText=auc_table.values.round(4),
+            colLabels=auc_table.columns,
+            loc='center',
+            cellLoc='center'
+        )
+        table.auto_set_font_size(False)
+        table.set_fontsize(10)
+        table.scale(1, 1.5)
+        
+        # 그래프 저장
+        plt.tight_layout(rect=[0, 0.2, 1, 1])  # 테이블을 위한 공간 확보
+        plt.savefig(os.path.join(self.output_dir, 'roc_curves.png'), dpi=300, bbox_inches='tight')
+        plt.close()
+        
+        # AUC 테이블 CSV로 저장
+        auc_table.to_csv(os.path.join(self.output_dir, 'auc_scores.csv'), index=False)
+        
+        print(f"ROC curves and AUC scores saved to {self.output_dir}")
+        
+        return roc_auc
     
     def _plot_tsne_visualization(self):
         """Generate t-SNE visualization of features."""

@@ -102,8 +102,9 @@ The framework generates the following visualizations:
 1. **Sample Images**: Displays sample images from each class
 2. **Training Progress**: Plots of training/validation loss and accuracy
 3. **Confusion Matrix**: Visualization of model predictions across classes
-4. **t-SNE Visualization**: 2D projection of high-dimensional feature space
-5. **Class Activation Maps**: Heatmaps showing important regions for classification
+4. **ROC Curves and AUC**: Receiver Operating Characteristic curves with AUC scores for each class
+5. **t-SNE Visualization**: 2D projection of high-dimensional feature space
+6. **Class Activation Maps**: Heatmaps showing important regions for classification
 
 All visualizations are saved to the specified output directory.
 
