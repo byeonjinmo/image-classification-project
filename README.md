@@ -87,6 +87,14 @@ python run_classifier.py --data_dir /path/to/image/data --mode evaluate --model_
 python run_classifier.py --data_dir /path/to/image/data --mode predict --predict_image /path/to/single/image.jpg
 ```
 
+### Resuming Training from a Checkpoint
+
+```bash
+python run_classifier.py --mode resume --data_dir /path/to/image/data --checkpoint_path results/checkpoint_epoch_3.pth --epochs 10
+```
+
+이 기능은 학습 중단 후 체크포인트에서 이어서 학습할 수 있게 해줍니다. 체크포인트는 각 에폭 후에 자동으로 저장됩니다.
+
 ## Output Visualizations
 
 The framework generates the following visualizations:
@@ -106,6 +114,8 @@ All visualizations are saved to the specified output directory.
 --lr FLOAT             Learning rate (default: 0.001)
 --val_split FLOAT      Validation split ratio (default: 0.2)
 --model STRING         ResNet variant: resnet18, resnet34, resnet50 (default: resnet18)
+--mode STRING          Operation mode: train, evaluate, predict, resume
+--checkpoint_path PATH Path to checkpoint file for resuming training (required for resume mode)
 ```
 
 ## 데이터셋 다운로드 및 모델 학습 자동화
@@ -147,7 +157,12 @@ python download_and_train.py --epochs 5 --batch_size 16
 
 3. 학습 결과 및 시각화를 확인 (flower_results 또는 results 폴더)
 
-4. 새 이미지로 예측:
+4. 학습이 중단된 경우 체크포인트에서 이어서 학습:
+   ```
+   python run_classifier.py --mode resume --data_dir my_images/ --checkpoint_path flower_results/checkpoint_epoch_3.pth --epochs 15
+   ```
+
+5. 새 이미지로 예측:
    ```
    python run_classifier.py --mode predict --predict_image new_image.jpg --model_path flower_results/final_model.pth
    ```

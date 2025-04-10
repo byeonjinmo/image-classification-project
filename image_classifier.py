@@ -213,11 +213,18 @@ class ImageClassifier:
         
         return self.model
     
-    def train(self):
-        """Train the model and track progress."""
-        print(f"Starting training for {self.num_epochs} epochs...")
+    def train(self, start_epoch=0):
+        """Train the model and track progress.
+        Args:
+            start_epoch (int): 시작할 에폭 번호 (체크포인트에서 이어서 학습할 때 사용)
+        """
+        print(f"Starting training from epoch {start_epoch+1} for {self.num_epochs} epochs...")
         
-        for epoch in range(self.num_epochs):
+        # 체크포인트에서 불러온 학습 히스토리가 있는지 확인
+        if start_epoch > 0 and not self.history['train_loss']:
+            print("경고: 체크포인트에서 학습 히스토리를 불러오지 못했습니다. 새로운 히스토리를 생성합니다.")
+        
+        for epoch in range(start_epoch, self.num_epochs):
             # Training phase
             self.model.train()
             train_loss = 0.0
