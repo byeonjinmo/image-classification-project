@@ -164,7 +164,7 @@ def main():
         print(f"\nDataset created at {dataset_dir}")
         print(f"The dataset contains {len(flower_classes)} classes with approximately {images_per_class} images per class")
         print("To use this dataset with the image classifier, run:")
-        print(f"python run_classifier.py --data_dir {dataset_dir} --epochs 5 --batch_size 16")
+        print(f"python scripts/run_classifier.py --data_dir {dataset_dir} --epochs 5 --batch_size 16")
         
     elif args.dataset == "cifar":
         # Implementation for CIFAR dataset

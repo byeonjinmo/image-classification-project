@@ -17,7 +17,8 @@ from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from .components import NeuronVisualizationWidget, TrainingThread
 
 # 모델 임포트 (경로는 실제 구조에 맞게 조정)
-from image_classifier import ImageClassifier
+# 참고: 이 파일은 더 이상 사용되지 않습니다. UI는 ui/classifier_ui.py를 사용합니다.
+# from model.classifier import ImageClassifier
 
 class MainWindow(QMainWindow):
     """이미지 분류기 학습 및 시각화를 위한 메인 UI 창"""

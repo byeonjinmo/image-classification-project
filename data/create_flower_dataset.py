@@ -90,7 +90,7 @@ def main():
     
     # Instructions for using the dataset
     print("\nTo use this dataset with the image classifier, run:")
-    print(f"python run_classifier.py --data_dir {dataset_dir} --epochs 5 --batch_size 16")
+    print(f"python scripts/run_classifier.py --data_dir {dataset_dir} --epochs 5 --batch_size 16")
     
     # Clean up temporary files
     try:

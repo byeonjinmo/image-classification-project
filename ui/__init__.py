@@ -1,2 +1,2 @@
-# UI 관련 패키지
-from .main_window import MainWindow
+# UI 관련 패키지 초기화
+# 아직 유지보수 중인 파일 - 직접적인 import 문 제거
