@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+"""
+꽃 이미지 데이터셋 다운로드 및 전처리
+"""
 import os
 import requests
 import tarfile
@@ -81,6 +84,7 @@ def create_dataset_structure(source_dir, target_dir, num_classes=5, images_per_c
                 print(f"Skipping {img_file}: {str(e)}")
 
 def main():
+    """커맨드 라인에서 데이터셋 다운로드 및 준비 실행"""
     parser = argparse.ArgumentParser(description="Download and prepare a dataset for image classification")
     parser.add_argument("--dataset", choices=["flowers", "cifar", "food"], default="flowers",
                         help="Dataset to download (default: flowers)")
