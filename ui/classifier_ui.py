@@ -1,4 +1,43 @@
-#!/usr/bin/env python3
+        # 데이터 증강 설정
+        augmentation_group = QGroupBox("데이터 증강 설정")
+        augmentation_layout = QGridLayout(augmentation_group)
+        
+        # 증강 사용 여부
+        self.use_augmentation_check = QCheckBox("데이터 증강 사용")
+        self.use_augmentation_check.setChecked(True)
+        augmentation_layout.addWidget(self.use_augmentation_check, 0, 0, 1, 2)
+        
+        # 회전 각도 설정
+        rotation_label = QLabel("회전 각도(\u00b0):")
+        self.rotation_spin = QSpinBox()
+        self.rotation_spin.setRange(0, 180)
+        self.rotation_spin.setValue(15)
+        augmentation_layout.addWidget(rotation_label, 1, 0)
+        augmentation_layout.addWidget(self.rotation_spin, 1, 1)
+        
+        # 크기 변환 설정
+        scale_label = QLabel("크기 변환 비율:")
+        self.scale_spin = QDoubleSpinBox()
+        self.scale_spin.setRange(0.0, 0.5)
+        self.scale_spin.setValue(0.1)
+        self.scale_spin.setSingleStep(0.05)
+        augmentation_layout.addWidget(scale_label, 2, 0)
+        augmentation_layout.addWidget(self.scale_spin, 2, 1)
+        
+        # 반전 설정
+        self.horizontal_flip_check = QCheckBox("수평 반전")
+        self.horizontal_flip_check.setChecked(True)
+        self.vertical_flip_check = QCheckBox("수직 반전")
+        self.vertical_flip_check.setChecked(False)
+        augmentation_layout.addWidget(self.horizontal_flip_check, 3, 0)
+        augmentation_layout.addWidget(self.vertical_flip_check, 3, 1)
+        
+        # 밝기/대비 변환
+        self.brightness_contrast_check = QCheckBox("밝기/대비 변환")
+        self.brightness_contrast_check.setChecked(True)
+        augmentation_layout.addWidget(self.brightness_contrast_check, 4, 0, 1, 2)
+        
+        layout.addWidget(augmentation_group)#!/usr/bin/env python3
 import os
 import sys
 import numpy as np
@@ -19,6 +58,8 @@ from model.classifier import ImageClassifier
 
 # UI 컴포넌트 임포트
 from ui.components import NeuronVisualizationWidget, TrainingThread
+from ui.components.checkpoint_manager import CheckpointManager
+from ui.components.data_analyzer import DatasetAnalyzer
 
 # 프로그래스 색상 지정
 pg.setConfigOption('background', 'w')
@@ -71,17 +112,23 @@ class ImageClassifierUI(QMainWindow):
         self.training_tab = QWidget()
         self.results_tab = QWidget()
         self.predict_tab = QWidget()
+        self.checkpoint_tab = QWidget()
+        self.analysis_tab = QWidget()
         
         self.setupSetupTab()
         self.setupTrainingTab()
         self.setupResultsTab()
         self.setupPredictTab()
+        self.setupCheckpointTab()
+        self.setupAnalysisTab()
         
         # 탭 추가
         self.tabs.addTab(self.setup_tab, "1. 데이터 및 모델 설정")
         self.tabs.addTab(self.training_tab, "2. 모델 학습")
         self.tabs.addTab(self.results_tab, "3. 학습 결과")
         self.tabs.addTab(self.predict_tab, "4. 이미지 예측")
+        self.tabs.addTab(self.checkpoint_tab, "5. 체크포인트 관리")
+        self.tabs.addTab(self.analysis_tab, "6. 데이터 분석")
         
         self.main_layout.addWidget(self.tabs)
         
@@ -106,6 +153,9 @@ class ImageClassifierUI(QMainWindow):
         
         load_action = file_menu.addAction("모델 불러오기")
         load_action.triggered.connect(self.loadModel)
+        
+        load_checkpoint_action = file_menu.addAction("체크포인트 불러오기")
+        load_checkpoint_action.triggered.connect(self.loadCheckpoint)
         
         exit_action = file_menu.addAction("종료")
         exit_action.triggered.connect(self.close)
@@ -150,7 +200,7 @@ class ImageClassifierUI(QMainWindow):
         
         model_type_label = QLabel("모델 타입:")
         self.model_combo = QComboBox()
-        self.model_combo.addItems(["ResNet18", "ResNet34", "ResNet50"])
+        self.model_combo.addItems(["ResNet18", "ResNet34", "ResNet50", "MobileNetV2", "EfficientNetB0", "VisionTransformer"])
         model_layout.addWidget(model_type_label, 0, 0)
         model_layout.addWidget(self.model_combo, 0, 1)
         
@@ -178,14 +228,28 @@ class ImageClassifierUI(QMainWindow):
         model_layout.addWidget(lr_label, 3, 0)
         model_layout.addWidget(self.lr_spin, 3, 1)
         
+        # 옵티맀이저 선택 옵션 추가
+        optimizer_label = QLabel("옵티맀이저:")
+        self.optimizer_combo = QComboBox()
+        self.optimizer_combo.addItems(["Adam", "SGD", "AdamW", "RMSprop"])
+        model_layout.addWidget(optimizer_label, 4, 0)
+        model_layout.addWidget(self.optimizer_combo, 4, 1)
+        
+        # 학습률 스케줄러 옵션 추가
+        scheduler_label = QLabel("학습률 스케줄러:")
+        self.scheduler_combo = QComboBox()
+        self.scheduler_combo.addItems(["없음", "StepLR", "ReduceLROnPlateau", "CosineAnnealingLR"])
+        model_layout.addWidget(scheduler_label, 5, 0)
+        model_layout.addWidget(self.scheduler_combo, 5, 1)
+        
         output_dir_label = QLabel("결과 저장 디렉토리:")
         self.output_dir_edit = QLineEdit("results")
         output_dir_browse = QPushButton("찾아보기...")
         output_dir_browse.clicked.connect(self.browseOutputDir)
         
-        model_layout.addWidget(output_dir_label, 4, 0)
-        model_layout.addWidget(self.output_dir_edit, 4, 1)
-        model_layout.addWidget(output_dir_browse, 4, 2)
+        model_layout.addWidget(output_dir_label, 6, 0)
+        model_layout.addWidget(self.output_dir_edit, 6, 1)
+        model_layout.addWidget(output_dir_browse, 6, 2)
         
         layout.addWidget(model_group)
         
@@ -241,6 +305,20 @@ class ImageClassifierUI(QMainWindow):
         summary_layout.addWidget(self.model_summary_label, 0, 0)
         summary_layout.addWidget(self.data_summary_label, 1, 0)
         summary_layout.addWidget(self.params_summary_label, 2, 0)
+        
+        # 체크포인트 불러오기 기능 추가
+        checkpoint_layout = QHBoxLayout()
+        self.checkpoint_label = QLabel("체크포인트:")
+        self.checkpoint_path = QLineEdit()
+        self.checkpoint_path.setReadOnly(True)
+        self.checkpoint_browse = QPushButton("찾아보기...")
+        self.checkpoint_browse.clicked.connect(self.browseCheckpoint)
+        
+        checkpoint_layout.addWidget(self.checkpoint_label)
+        checkpoint_layout.addWidget(self.checkpoint_path)
+        checkpoint_layout.addWidget(self.checkpoint_browse)
+        
+        summary_layout.addLayout(checkpoint_layout, 3, 0)
         
         layout.addWidget(summary_group)
         
@@ -404,6 +482,83 @@ class ImageClassifierUI(QMainWindow):
         
         layout.addLayout(result_btn_layout)
         
+    def setupAnalysisTab(self):
+        """데이터 분석 탭 설정"""
+        layout = QVBoxLayout(self.analysis_tab)
+        
+        # 데이터 분석기 추가
+        self.data_analyzer = DatasetAnalyzer()
+        
+        layout.addWidget(self.data_analyzer)
+        
+        # 변경 버튼
+        btn_layout = QHBoxLayout()
+        
+        self.analyze_data_btn = QPushButton("현재 데이터셋 분석")
+        self.analyze_data_btn.clicked.connect(self.analyzeCurrentDataset)
+        self.analyze_data_btn.setEnabled(False)
+        
+        btn_layout.addWidget(self.analyze_data_btn)
+        
+        layout.addLayout(btn_layout)
+        
+    def setupCheckpointTab(self):
+        """체크포인트 관리 탭 설정"""
+        layout = QVBoxLayout(self.checkpoint_tab)
+        
+        # 체크포인트 관리자 추가
+        self.checkpoint_manager = CheckpointManager(self.output_dir_edit.text() or "results")
+        self.checkpoint_manager.load_checkpoint_signal.connect(self.loadCheckpointFromManager)
+        
+        layout.addWidget(self.checkpoint_manager)
+    
+    def analyzeCurrentDataset(self):
+        """현재 로드된 데이터셋 분석"""
+        if hasattr(self, 'classifier') and self.classifier and hasattr(self.classifier, 'train_loader'):
+            # 데이터 로더 설정
+            self.data_analyzer.set_data_loader(self.classifier.train_loader)
+            
+            # 클래스 분포 분석 실행
+            self.data_analyzer.analyze_class_distribution()
+            
+            # 탭 이동
+            self.tabs.setCurrentWidget(self.analysis_tab)
+            
+            # 상태 메시지 업데이트
+            self.status_bar.showMessage("데이터셋 분석 완료")
+        else:
+            QMessageBox.warning(self, "경고", "먼저 데이터를 로드해주세요")
+        # 체크포인트 경로 설정
+        self.checkpoint_path.setText(checkpoint_path)
+        
+        # 학습 탭으로 이동
+        self.tabs.setCurrentIndex(1)
+        
+        # 학습 재개 버튼으로 변경
+        self.train_btn.setText("학습 재개")
+        
+        # 체크포인트 정보 불러오기
+        try:
+            checkpoint = torch.load(checkpoint_path, map_location=torch.device('cpu'))
+            epoch = checkpoint.get('epoch', 0) + 1  # 0-based에서 1-based로 변환
+            self.params_summary_label.setText(f"파라미터: 에폭 {epoch}\/{self.epochs_spin.value()} 에서 체크포인트 불러옴")
+            
+            # 체크포인트 학습 정보가 있으면 출력
+            if 'history' in checkpoint and len(checkpoint['history'].get('train_loss', [])) > 0:
+                val_acc = checkpoint['history']['val_acc'][-1] * 100 if checkpoint['history']['val_acc'] else 0
+                self.status_bar.showMessage(f"체크포인트 불러오기 성공: 에폭 {epoch}, 정확도: {val_acc:.2f}%")
+                
+                # 학습 그래프 업데이트
+                epochs = list(range(1, len(checkpoint['history']['train_loss'])+1))
+                self.train_loss_curve.setData(epochs, checkpoint['history']['train_loss'])
+                self.val_loss_curve.setData(epochs, checkpoint['history']['val_loss'])
+                self.train_acc_curve.setData(epochs, checkpoint['history']['train_acc'])
+                self.val_acc_curve.setData(epochs, checkpoint['history']['val_acc'])
+            else:
+                self.status_bar.showMessage(f"체크포인트 불러오기 성공: 에폭 {epoch}")
+        except Exception as e:
+            QMessageBox.warning(self, "경고", f"체크포인트 정보 불러오기 오류: {str(e)}")
+        
     def setupPredictTab(self):
         layout = QVBoxLayout(self.predict_tab)
         
@@ -480,6 +635,29 @@ class ImageClassifierUI(QMainWindow):
         self.predict_btn.setEnabled(False)
         layout.addWidget(self.predict_btn)
         
+    def browseCheckpoint(self):
+        """체크포인트 파일 선택 대화상자 표시"""
+        file, _ = QFileDialog.getOpenFileName(self, "체크포인트 파일 선택", "", "PyTorch 체크포인트 (*.pth)")
+        if file:
+            self.checkpoint_path.setText(file)
+            # 파일이 선택되면 학습 재개 가능하도록 설정
+            self.train_btn.setText("학습 재개")
+            
+            # 체크포인트 정보 불러오기
+            try:
+                checkpoint = torch.load(file, map_location=torch.device('cpu'))
+                epoch = checkpoint.get('epoch', 0) + 1  # 0-based에서 1-based로 변환
+                self.params_summary_label.setText(f"파라미터: 에폭 {epoch}\/{self.epochs_spin.value()} 에서 체크포인트 불러옴")
+                
+                # 체크포인트 학습 정보가 있으면 출력
+                if 'history' in checkpoint and len(checkpoint['history'].get('train_loss', [])) > 0:
+                    val_acc = checkpoint['history']['val_acc'][-1] * 100 if checkpoint['history']['val_acc'] else 0
+                    self.status_bar.showMessage(f"체크포인트 불러오기 성공: 에폭 {epoch}, 정확도: {val_acc:.2f}%")
+                else:
+                    self.status_bar.showMessage(f"체크포인트 불러오기 성공: 에폭 {epoch}")
+            except Exception as e:
+                QMessageBox.warning(self, "경고", f"체크포인트 정보 불러오기 오류: {str(e)}")
+    
     def browseDataDir(self):
         """데이터 디렉토리 선택 대화상자 표시"""
         folder = QFileDialog.getExistingDirectory(self, "데이터 디렉토리 선택")
@@ -491,6 +669,10 @@ class ImageClassifierUI(QMainWindow):
         folder = QFileDialog.getExistingDirectory(self, "결과 저장 디렉토리 선택")
         if folder:
             self.output_dir_edit.setText(folder)
+            
+            # 체크포인트 관리자 경로 업데이트
+            if hasattr(self, 'checkpoint_manager'):
+                self.checkpoint_manager.set_output_dir(folder)
     
     def browsePredictModel(self):
         """모델 파일 선택 대화상자 표시"""
@@ -510,7 +692,6 @@ class ImageClassifierUI(QMainWindow):
             if not pixmap.isNull():
                 pixmap = pixmap.scaled(400, 300, Qt.KeepAspectRatio, Qt.SmoothTransformation)
                 self.image_display.setPixmap(pixmap)
-    
     def loadData(self):
         """데이터 로드 및 미리보기"""
         data_dir = self.data_dir_edit.text()
@@ -537,6 +718,9 @@ class ImageClassifierUI(QMainWindow):
             
             # 모델 초기화 버튼 활성화
             self.init_model_btn.setEnabled(True)
+            
+            # 데이터 분석 버튼 활성화
+            self.analyze_data_btn.setEnabled(True)
             
             # 상태 메시지 업데이트
             self.status_bar.showMessage(f"데이터 로드 완료: {len(self.classifier.train_dataset)} 학습 이미지, {len(self.classifier.val_dataset)} 검증 이미지")
@@ -597,22 +781,74 @@ class ImageClassifierUI(QMainWindow):
             
             # 학습 버튼 활성화
             self.train_btn.setEnabled(True)
+            self.train_btn.setText("학습 시작")  # 체크포인트 선택 후 "학습 재개"로 변경될 수 있음
             
             # 상태 메시지 업데이트
             self.status_bar.showMessage(f"{self.model_combo.currentText()} 모델 초기화 완료")
             
+            # 체크포인트 경로 초기화 (새 모델을 시작하는 경우)
+            if self.checkpoint_path.text():
+                response = QMessageBox.question(
+                    self, "체크포인트 초기화",
+                    "새 모델을 초기화했습니다. 체크포인트 선택을 초기화할까요?",
+                    QMessageBox.Yes | QMessageBox.No
+                )
+                
+                if response == QMessageBox.Yes:
+                    self.checkpoint_path.setText("")
+                    self.train_btn.setText("학습 시작")
+                
         except Exception as e:
             QMessageBox.critical(self, "오류", f"모델 초기화 중 오류 발생: {str(e)}")
     
     def startTraining(self):
         """모델 학습 시작"""
+        # 체크포인트 파일이 있는지 확인
+        start_epoch = 0
+        checkpoint_path = self.checkpoint_path.text()
+        
+        # 체크포인트가 있을 경우 체크포인트에서 모델 불러오기
+        if checkpoint_path and os.path.exists(checkpoint_path):
+            try:
+                # 체크포인트 불러오기
+                checkpoint = torch.load(checkpoint_path, map_location=self.classifier.device)
+                
+                # 모델 가중치 불러오기
+                self.classifier.model.load_state_dict(checkpoint['model_state_dict'])
+                
+                # 옵티마이저 가중치 불러오기
+                self.classifier.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+                
+                # 스케줄러 가중치 불러오기
+                if 'scheduler_state_dict' in checkpoint and hasattr(self.classifier, 'scheduler'):
+                    self.classifier.scheduler.load_state_dict(checkpoint['scheduler_state_dict'])
+                
+                # 학습 히스토리 불러오기
+                if 'history' in checkpoint:
+                    self.classifier.history = checkpoint['history']
+                
+                # 시작 에폭 가져오기
+                start_epoch = checkpoint.get('epoch', 0) + 1
+                
+                self.status_bar.showMessage(f"체크포인트에서 불러왔습니다. 에폭 {start_epoch}부터 학습을 재개합니다.")
+            except Exception as e:
+                QMessageBox.warning(self, "경고", f"체크포인트 불러오기 오류: {str(e)}")
+                return
+        
+        # 체크포인트 설정 가져오기
+        checkpoint_settings = None
+        if hasattr(self, 'checkpoint_manager'):
+            checkpoint_settings = self.checkpoint_manager.get_checkpoint_settings()
+        
         # 학습 쓰레드 생성
-        self.training_thread = TrainingThread(self.classifier, self.epochs_spin.value())
+        self.training_thread = TrainingThread(self.classifier, self.epochs_spin.value(), start_epoch, checkpoint_settings)
         
         # 시그널 연결
         self.training_thread.update_progress.connect(self.updateEpochProgress)
         self.training_thread.update_batch.connect(self.updateBatchProgress)
         self.training_thread.finished.connect(self.trainingFinished)
+        self.training_thread.error.connect(self.handle_training_error)
+        self.training_thread.error.connect(self.handle_training_error)
         
         # 버튼 상태 업데이트
         self.train_btn.setEnabled(False)
@@ -629,7 +865,10 @@ class ImageClassifierUI(QMainWindow):
         self.training_thread.start()
         
         # 상태 메시지 업데이트
-        self.status_bar.showMessage("모델 학습 시작...")
+        if start_epoch > 0:
+            self.status_bar.showMessage(f"에폭 {start_epoch}부터 학습 재개 중...")
+        else:
+            self.status_bar.showMessage("모델 학습 시작...")
     
     def stopTraining(self):
         """모델 학습 중단"""
@@ -669,17 +908,34 @@ class ImageClassifierUI(QMainWindow):
         self.batch_label.setText(f"배치: {batch+1}/{total_batches}")
         self.batch_progress.setValue(int(progress))
     
-    def trainingFinished(self, history):
-        """학습 완료 처리"""
-        # 뉴런 시각화 중단
+    def handle_training_error(self, error_message):
+        """학습 중 오류 처리"""
+        QMessageBox.critical(self, "학습 오류", f"학습 중 오류가 발생했습니다: {error_message}")
+        
+        # 뉴런 시각화 중지
         self.neuron_viz.stopVisualization()
         
         # 버튼 상태 업데이트
         self.train_btn.setEnabled(True)
         self.stop_btn.setEnabled(False)
         self.init_model_btn.setEnabled(True)
-        self.save_results_btn.setEnabled(True)
-        self.open_results_dir_btn.setEnabled(True)
+        
+        # 상태 메시지 업데이트
+        self.status_bar.showMessage(f"학습 오류: {error_message}")
+    
+    def trainingFinished(self, history):
+        """학습 완료 처리"""
+        # 뉴런 시각화 중지
+        self.neuron_viz.stopVisualization()
+        
+        # 버튼 상태 업데이트
+        self.train_btn.setEnabled(True)
+        self.train_btn.setText("학습 시작")
+        self.stop_btn.setEnabled(False)
+        self.init_model_btn.setEnabled(True)
+        
+        # 체크포인트 경로 초기화
+        self.checkpoint_path.setText("")
         
         # 학습 시간 계산
         training_time = time.time() - self.training_start_time
@@ -698,9 +954,25 @@ class ImageClassifierUI(QMainWindow):
         
         # 모델 평가 및 결과 시각화
         try:
+            # 모델 저장
+            model_path = self.classifier.save_model()
+            
+            # 마지막 체크포인트 경로 - 일관된 형식 사용
+            last_epoch = len(self.classifier.history['train_loss']) - 1
+            last_checkpoint_path = os.path.join(self.classifier.output_dir, f'checkpoint_epoch_{last_epoch}.pth')
+            
             self.classifier.evaluate()
             self.loadResultVisualizations()
-            self.status_bar.showMessage(f"모델 학습 완료. 정확도: {final_acc:.2f}%")
+            
+            # 예측 탭의 모델 경로 설정
+            self.predict_model_path.setText(model_path)
+            self.predict_btn.setEnabled(True)
+            
+            # 결과 저장 버튼 활성화
+            self.save_results_btn.setEnabled(True)
+            self.open_results_dir_btn.setEnabled(True)
+            
+            self.status_bar.showMessage(f"모델 학습 완료. 정확도: {final_acc:.2f}%, 모델 저장됨: {model_path}")
         except Exception as e:
             QMessageBox.warning(self, "경고", f"결과 시각화 중 오류 발생: {str(e)}")
             self.status_bar.showMessage("모델 학습 완료, 결과 시각화 실패")
@@ -849,6 +1121,104 @@ class ImageClassifierUI(QMainWindow):
         else:
             QMessageBox.warning(self, "경고", "저장할 모델이 없습니다. 먼저 모델을 학습해주세요.")
     
+    def loadCheckpoint(self):
+        """체크포인트를 불러와 학습 재개"""
+        file, _ = QFileDialog.getOpenFileName(self, "체크포인트 파일 선택", "", "PyTorch 체크포인트 (*.pth)")
+        if file:
+            try:
+                # 체크포인트 파일 로드
+                checkpoint = torch.load(file, map_location=torch.device('cpu'))
+                
+                # 현재 데이터가 로드되어 있는지 확인
+                if not hasattr(self, 'classifier') or not self.classifier or not hasattr(self.classifier, 'class_names'):
+                    QMessageBox.warning(self, "경고", "먼저 데이터를 로드해주세요.")
+                    return
+                
+                # 기존 모델이 있는지 확인
+                if not hasattr(self.classifier, 'model') or self.classifier.model is None:
+                    # 모델 초기화
+                    self.classifier.create_model()
+                
+                # 학습 과정 로드
+                self.classifier.model.load_state_dict(checkpoint['model_state_dict'])
+                self.classifier.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+                self.classifier.scheduler.load_state_dict(checkpoint['scheduler_state_dict'])
+                
+                # 학습 히스토리 불러오기
+                if 'history' in checkpoint:
+                    self.classifier.history = checkpoint['history']
+                    
+                    # 학습 그래프 업데이트
+                    if len(self.classifier.history['train_loss']) > 0:
+                        epochs = list(range(1, len(self.classifier.history['train_loss'])+1))
+                        self.train_loss_curve.setData(epochs, self.classifier.history['train_loss'])
+                        self.val_loss_curve.setData(epochs, self.classifier.history['val_loss'])
+                        self.train_acc_curve.setData(epochs, self.classifier.history['train_acc'])
+                        self.val_acc_curve.setData(epochs, self.classifier.history['val_acc'])
+                
+                # 에폭 정보 추출
+                start_epoch = checkpoint.get('epoch', -1) + 1  # 다음 에폭부터 시작
+                
+                # UI 상태 업데이트
+                self.model_summary_label.setText(f"모델: {self.classifier.model_type}")
+                self.data_summary_label.setText(f"데이터: 학습 {len(self.classifier.train_dataset)}, 검증 {len(self.classifier.val_dataset)}")
+                self.params_summary_label.setText(f"파라미터: 에폭={start_epoch}/{self.epochs_spin.value()}")
+                
+                # 학습 버튼 활성화
+                self.train_btn.setEnabled(True)
+                
+                # 에폭 프로그레스 업데이트
+                self.epoch_label.setText(f"에폭: {start_epoch}/{self.epochs_spin.value()}")
+                self.epoch_progress.setValue(int(start_epoch / self.epochs_spin.value() * 100))
+                
+                # 상태 메시지 업데이트
+                self.status_bar.showMessage(f"체크포인트 불러오기 성공: {file}, 에폭 {start_epoch}부터 다시 시작")
+                
+                # 학습 계속할지 여부 물어보기
+                reply = QMessageBox.question(self, "학습 재개", 
+                    f"체크포인트가 성공적으로 불러왔습니다.\n\n에폭 {start_epoch}부터 학습을 계속하시겠습니까?",
+                    QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+                
+                if reply == QMessageBox.Yes:
+                    # 학습 재개 시작
+                    self.resumeTraining(start_epoch)
+                
+            except Exception as e:
+                QMessageBox.critical(self, "오류", f"체크포인트 불러오기 실패: {str(e)}")
+    
+    def resumeTraining(self, start_epoch):
+        """체크포인트부터 학습 재개"""
+        # 체크포인트 설정 가져오기
+        checkpoint_settings = None
+        if hasattr(self, 'checkpoint_manager'):
+            checkpoint_settings = self.checkpoint_manager.get_checkpoint_settings()
+            
+        # 학습 쓰레드 생성 (시작 에폭 지정)
+        self.training_thread = TrainingThread(self.classifier, self.epochs_spin.value(), start_epoch, checkpoint_settings)
+        
+        # 시그널 연결
+        self.training_thread.update_progress.connect(self.updateEpochProgress)
+        self.training_thread.update_batch.connect(self.updateBatchProgress)
+        self.training_thread.finished.connect(self.trainingFinished)
+        self.training_thread.error.connect(self.handle_training_error)
+        
+        # 버튼 상태 업데이트
+        self.train_btn.setEnabled(False)
+        self.stop_btn.setEnabled(True)
+        self.init_model_btn.setEnabled(False)
+        
+        # 뉴런 시각화 시작
+        self.neuron_viz.startVisualization()
+        
+        # 학습 시작 시간 기록
+        self.training_start_time = time.time()
+        
+        # 학습 쓰레드 시작
+        self.training_thread.start()
+        
+        # 상태 메시지 업데이트
+        self.status_bar.showMessage(f"모델 학습 재개... 에폭 {start_epoch}부터")
+    
     def loadModel(self):
         """모델 불러오기 메뉴 처리"""
         file, _ = QFileDialog.getOpenFileName(self, "모델 파일 선택", "", "PyTorch 모델 (*.pth)")
@@ -875,7 +1245,46 @@ class ImageClassifierUI(QMainWindow):
                 
             except Exception as e:
                 QMessageBox.critical(self, "오류", f"모델 불러오기 실패: {str(e)}")
-    
+    def setupAnalysisTab(self):
+        """데이터 분석 탭 설정"""
+        layout = QVBoxLayout(self.analysis_tab)
+        
+        # 데이터 분석기 추가
+        self.data_analyzer = DatasetAnalyzer()
+        
+        layout.addWidget(self.data_analyzer)
+        
+        # 분석 버튼
+        btn_layout = QHBoxLayout()
+        
+        self.analyze_data_btn = QPushButton("현재 데이터셋 분석")
+        self.analyze_data_btn.clicked.connect(self.analyzeCurrentDataset)
+        self.analyze_data_btn.setEnabled(False)
+        
+        btn_layout.addWidget(self.analyze_data_btn)
+        
+        layout.addLayout(btn_layout)
+        
+    def analyzeCurrentDataset(self):
+        """현재 데이터셋 분석"""
+        if not hasattr(self, 'classifier') or not self.classifier:
+            QMessageBox.warning(self, "경고", "먼저 데이터를 로드해주세요.")
+            return
+        
+        if not hasattr(self.classifier, 'train_loader') or not self.classifier.train_loader:
+            QMessageBox.warning(self, "경고", "데이터 로더가 초기화되지 않았습니다.")
+            return
+        
+        # 데이터 분석기에 데이터 로더 전달
+        self.data_analyzer.set_data_loader(self.classifier.train_loader)
+        
+        # 분석 시작
+        self.tabs.setCurrentWidget(self.analysis_tab)
+        self.data_analyzer.analyze_class_distribution()
+        
+        # 상태 메세지 업데이트
+        self.status_bar.showMessage("데이터셋 분석 완료")
+        
     def showAbout(self):
         """프로그램 정보 표시"""
         QMessageBox.about(self, "프로그램 정보",
