@@ -1,5 +1,7 @@
 # 딥러닝 이미지 분류 시스템
 
+
+
 ResNet 아키텍처 기반의 딥러닝 이미지 분류 모델 학습 및 평가, 직관적인 사용자 인터페이스를 제공하는 종합 시스템입니다.
 
 ## 소개
@@ -166,6 +168,38 @@ jin/
 | ResNet18  | ~92%    | 빠름     | 11M        |
 | ResNet34  | ~94%    | 중간     | 21M        |
 | ResNet50  | ~95%    | 느림     | 25M        |
+
+## 실행 결과 및 시각화
+
+### 1. 데이터셋 샘플 이미지
+
+꽃 데이터셋 샘플 이미지입니다. 데이터셋에는 daisy, dandelion, roses, sunflowers, tulips의 5개 클래스가 포함되어 있습니다.
+
+![샘플 이미지](./flower_results/sample_images.png)
+
+### 2. 학습 진행 과정
+
+모델 학습 과정에서의 손실(loss)과 정확도(accuracy) 그래프입니다.
+
+![학습 진행](./flower_results/training_progress.png)
+
+### 3. 혼동 행렬 (Confusion Matrix)
+
+테스트 데이터셋에 대한 모델의 예측 결과를 시각화한 혼동 행렬입니다.
+
+![혼동 행렬](./flower_results/confusion_matrix.png)
+
+### 4. t-SNE 시각화
+
+고차원 특성 공간을 2차원으로 축소하여 클래스 간 관계를 시각화합니다.
+
+![t-SNE 시각화](./flower_results/tsne_visualization.png)
+
+### 5. 클래스 활성화 맵 (CAM)
+
+모델이 이미지의 어떤 부분에 주목하는지 히트맵으로 시각화합니다.
+
+![클래스 활성화 맵](./flower_results/class_activation_maps.png)
 
 ## 시각화 예시
 
