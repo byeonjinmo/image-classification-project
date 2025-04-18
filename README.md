@@ -1,8 +1,15 @@
 # 딥러닝 이미지 분류 시스템
 
-
-
 ResNet 아키텍처 기반의 딥러닝 이미지 분류 모델 학습 및 평가, 직관적인 사용자 인터페이스를 제공하는 종합 시스템입니다.
+
+## 프로젝트 개선사항
+
+최근 개선된 부분:
+- UI 버그 수정 및 기능 향상 (누락된 메서드 추가)
+- 데이터 분석 기능 강화 및 시각화 개선
+- 체크포인트 관리 시스템 추가 
+- 테스트 및 훈련 스크립트 추가
+- 프로젝트 디렉토리 구조 정리 및 코드 경로 수정
 
 ## 소개
 
@@ -15,92 +22,9 @@ ResNet 아키텍처 기반의 딥러닝 이미지 분류 모델 학습 및 평�
 - **시각화 도구**: 학습 과정, 성능 평가, 모델 해석을 위한 다양한 시각화 도구 제공
 - **직관적인 UI**: PyQt5 기반의 사용자 친화적 인터페이스
 - **유연한 실행 방식**: 명령줄 또는 UI를 통한 실행 지원
+- **향상된 모델 관리**: 체크포인트 저장/불러오기 및 관리 시스템
 
-## 기술적 개요
-
-### 이미지 분류 구현
-
-본 시스템은 다음과 같은 이미지 분류 파이프라인을 구현합니다:
-
-1. **데이터 준비**
-   - 데이터셋 다운로드 및 구조화
-   - 이미지 전처리: 크기 조정, 정규화, 증강
-   - 학습/검증 데이터 분할
-
-2. **모델 아키텍처**
-   - ResNet: 이미지 분류를 위한 잔차 학습(Residual Learning) 네트워크
-   - 전이 학습(Transfer Learning): ImageNet 사전 학습 가중치 활용
-   - 다양한 모델 깊이 지원: 18, 34, 50 레이어 버전
-
-3. **학습 과정**
-   - 교차 엔트로피 손실 함수
-   - Adam 최적화 알고리즘
-   - 학습률 스케줄러 (ReduceLROnPlateau)
-   - 배치 정규화 및 드롭아웃을 통한 정규화
-
-4. **평가 및 분석**
-   - 정확도, 정밀도, 재현율, F1 점수 등 다양한 평가 지표
-   - 혼동 행렬 및 ROC 커브 분석
-   - t-SNE를 통한 특성 시각화
-   - 클래스 활성화 맵(CAM)을 통한 모델 해석
-
-### 시각화 기능
-
-- **학습 모니터링**: 학습/검증 손실, 정확도의 실시간 그래프 시각화
-- **성능 평가**: 혼동 행렬, ROC 커브, 정밀도-재현율 곡선
-- **모델 해석**: 클래스 활성화 맵으로 모델이 이미지의 어떤 부분에 주목하는지 시각화
-- **특성 시각화**: t-SNE를 활용한 고차원 특성의 2D 시각화
-- **신경망 활성화**: 네트워크 레이어 활성화 패턴 시각화
-
-## 프로젝트 구조
-
-```
-jin/
-├── data/                   # 데이터 관련 모듈
-│   ├── __init__.py         # 패키지 초기화
-│   ├── create_flower_dataset.py  # 꽃 데이터셋 생성
-│   ├── dataset.py          # 데이터셋 클래스 및 유틸리티
-│   ├── download_dataset.py # 데이터셋 다운로드 스크립트
-│   ├── flower_data/        # 꽃 데이터셋 저장 디렉토리
-│   └── samples/            # 샘플 데이터
-│
-├── model/                  # 모델 관련 모듈
-│   ├── __init__.py         # 패키지 초기화
-│   ├── classifier.py       # 이미지 분류 모델 클래스
-│   └── utils/              # 모델 유틸리티
-│       ├── __init__.py     # 패키지 초기화
-│       ├── metrics.py      # 모델 평가 메트릭 유틸리티
-│       └── visualization.py # 모델 시각화 유틸리티
-│
-├── scripts/                # 실행 스크립트
-│   ├── download_and_train.py # 데이터 다운로드 및 학습 통합 스크립트
-│   ├── run_app.py          # 애플리케이션 실행 스크립트
-│   ├── run_classifier.py   # 분류기 실행 스크립트
-│   ├── run_ui.py           # UI 실행 스크립트
-│   └── sh/                 # 셸 스크립트
-│       ├── setup.sh        # 기본 설치 스크립트
-│       ├── setup_and_run.sh # 설치 및 실행 스크립트
-│       └── setup_ui.sh     # UI 관련 설치 스크립트
-│
-├── ui/                     # UI 관련 모듈
-│   ├── __init__.py         # 패키지 초기화
-│   ├── classifier_ui.py    # 이미지 분류기 UI 클래스
-│   ├── components/         # UI 컴포넌트
-│   │   ├── __init__.py     # 패키지 초기화
-│   │   └── widgets/        # UI 위젯
-│   │       ├── __init__.py  # 패키지 초기화
-│   │       └── visualization.py # 시각화 위젯
-│   ├── main_window.py      # 메인 UI 창
-│   ├── main_window_init.py # 메인 창 초기화
-│   ├── main_window_methods.py # 메인 창 메서드
-│   └── utils/              # UI 유틸리티
-│       ├── __init__.py     # 패키지 초기화
-│       └── file_utils.py   # 파일 처리 유틸리티
-│
-└── requirements.txt        # 필수 패키지 목록
-```
-
-## 설치 방법
+## 설치 및 실행 방법
 
 ### 필요 조건
 
@@ -112,51 +36,134 @@ jin/
 
 1. 저장소 클론:
    ```bash
-   git clone https://github.com/byeonjinmo/image-classification-project.git
+   git clone https://github.com/username/image-classification-project.git
    cd image-classification-project
    ```
 
 2. 필요한 패키지 설치:
    ```bash
-   bash scripts/sh/setup.sh
+   pip install -r requirements.txt
    ```
 
-## 사용 방법
+### 실행 방법
+
+#### 1. UI 실행하기
+
+```bash
+python scripts/run_ui.py
+```
+
+또는 업데이트된 런처를 사용할 수 있습니다:
+
+```bash
+python scripts/updated_launcher.py
+```
+
+#### 2. 명령줄로 모델 학습하기
+
+```bash
+python scripts/run_training.py --data_dir flower_dataset --num_epochs 10 --batch_size 32 --model_type resnet18
+```
+
+#### 3. 학습된 모델로 이미지 예측하기
+
+```bash
+python scripts/test_model.py --data_dir flower_dataset --model_path results/final_model.pth --test_image path/to/image.jpg
+```
+
+## 프로젝트 구성요소
+
+### UI 컴포넌트
+
+- **데이터 및 모델 설정 탭**: 데이터셋 로드, 모델 유형 선택, 하이퍼파라미터 설정
+- **모델 학습 탭**: 학습 진행 상황 모니터링, 실시간 손실/정확도 그래프, 뉴런 활성화 시각화
+- **학습 결과 탭**: 혼동 행렬, ROC 커브, t-SNE 시각화, 클래스 활성화 맵 등 
+- **이미지 예측 탭**: 개별 이미지 예측 및 클래스별 신뢰도 확인
+- **체크포인트 관리 탭**: 학습 체크포인트 저장, 불러오기 및 관리
+- **데이터 분석 탭**: 데이터셋 분석 및 클래스 분포, 이미지 크기 분포 등 시각화
+
+## 프로젝트 구조
+
+```
+jin/
+├── data/                   # 데이터 관련 모듈
+│   ├── __init__.py         # 패키지 초기화
+│   ├── create_flower_dataset.py  # 꽃 데이터셋 생성
+│   ├── dataset.py          # 데이터셋 클래스 및 유틸리티
+│   └── download_dataset.py # 데이터셋 다운로드 스크립트
+│
+├── model/                  # 모델 관련 모듈
+│   ├── __init__.py         # 패키지 초기화
+│   ├── classifier.py       # 이미지 분류 모델 클래스
+│   ├── image_utils.py      # 이미지 유틸리티 함수
+│   └── utils/              # 모델 유틸리티
+│
+├── scripts/                # 실행 스크립트
+│   ├── run_app.py          # 애플리케이션 실행 스크립트
+│   ├── run_ui.py           # UI 실행 스크립트
+│   ├── run_training.py     # 모델 학습 스크립트
+│   ├── test_model.py       # 모델 테스트 스크립트
+│   ├── updated_launcher.py # 업데이트된 UI 런처
+│   └── improved_patch.py   # UI 패치 스크립트
+│
+├── ui/                     # UI 관련 모듈
+│   ├── __init__.py         # 패키지 초기화
+│   ├── classifier_ui.py    # 이미지 분류기 UI 클래스
+│   ├── components/         # UI 컴포넌트
+│   │   ├── __init__.py     # 패키지 초기화
+│   │   ├── checkpoint_manager.py # 체크포인트 관리자
+│   │   ├── data_analyzer.py # 데이터 분석기
+│   │   └── widgets/        # UI 위젯
+│   └── utils/              # UI 유틸리티
+│
+├── flower_dataset/         # 꽃 이미지 데이터셋 (예시)
+│
+├── results/                # 학습 결과 저장 디렉토리
+│
+└── requirements.txt        # 필수 패키지 목록
+```
+
+## 사용법 튜토리얼
 
 ### UI를 통한 사용
 
-1. UI 실행:
-   ```bash
-   python scripts/run_ui.py
-   ```
-
-2. UI 내에서:
-   - '데이터 및 모델 설정' 탭에서 데이터셋 선택
+1. **데이터 및 모델 설정**:
+   - '데이터 디렉토리' 찾아보기 버튼을 클릭하여 이미지 데이터셋 폴더 선택
+   - '데이터 로드 및 미리보기' 버튼을 클릭하여 데이터셋 정보 확인
    - 모델 유형 및 하이퍼파라미터 설정
-   - '모델 학습' 탭에서 학습 시작
-   - '학습 결과' 탭에서 다양한 성능 지표 및 시각화 확인
-   - '이미지 예측' 탭에서 새 이미지 분류 테스트
+   - '모델 초기화' 버튼 클릭
+
+2. **모델 학습**:
+   - '학습 시작' 버튼을 클릭하여 훈련 시작
+   - 실시간 손실/정확도 그래프 및 진행 상황 모니터링
+   - 필요시 '학습 중단' 버튼으로 중단 가능
+
+3. **결과 확인**:
+   - 학습 완료 후 '학습 결과' 탭으로 자동 이동
+   - 혼동 행렬, ROC 커브 등 다양한 성능 지표 확인
+   - '모델 평가' 버튼으로 추가 평가 진행 가능
+   - '결과 저장' 버튼으로 모델 및 결과 저장
+
+4. **이미지 예측**:
+   - '모델 파일' 선택 및 테스트할 이미지 선택
+   - '예측 실행' 버튼 클릭
+   - 예측 클래스 및 클래스별 신뢰도 확인
 
 ### 명령줄을 통한 사용
 
-1. 데이터셋 다운로드:
+1. **모델 학습**: 
    ```bash
-   python data/download_dataset.py --dataset flowers --output_dir datasets
+   python scripts/run_training.py --data_dir flower_dataset --output_dir results --model_type resnet18 --num_epochs 10
    ```
 
-2. 모델 학습:
+2. **학습 재개**: 
    ```bash
-   python scripts/run_classifier.py --data_dir data/flower_data --epochs 10 --batch_size 32 --model resnet18
+   python scripts/run_training.py --data_dir flower_dataset --checkpoint results/checkpoint_epoch_5.pth
    ```
 
-3. 이미지 예측:
+3. **테스트 이미지 예측**: 
    ```bash
-   python scripts/run_classifier.py --mode predict --predict_image path/to/image.jpg
-   ```
-
-4. 다운로드 및 학습 자동화:
-   ```bash
-   python scripts/download_and_train.py --dataset flowers --epochs 10
+   python scripts/test_model.py --model_path results/final_model.pth --test_image flower.jpg
    ```
 
 ## 모델 성능
@@ -168,52 +175,6 @@ jin/
 | ResNet18  | ~92%    | 빠름     | 11M        |
 | ResNet34  | ~94%    | 중간     | 21M        |
 | ResNet50  | ~95%    | 느림     | 25M        |
-
-## 실행 결과 및 시각화
-
-### 1. 데이터셋 샘플 이미지
-
-꽃 데이터셋 샘플 이미지입니다. 데이터셋에는 daisy, dandelion, roses, sunflowers, tulips의 5개 클래스가 포함되어 있습니다.
-
-![샘플 이미지](./flower_results/sample_images.png)
-
-### 2. 학습 진행 과정
-
-모델 학습 과정에서의 손실(loss)과 정확도(accuracy) 그래프입니다.
-
-![학습 진행](./flower_results/training_progress.png)
-
-### 3. 혼동 행렬 (Confusion Matrix)
-
-테스트 데이터셋에 대한 모델의 예측 결과를 시각화한 혼동 행렬입니다.
-
-![혼동 행렬](./flower_results/confusion_matrix.png)
-
-### 4. t-SNE 시각화
-
-고차원 특성 공간을 2차원으로 축소하여 클래스 간 관계를 시각화합니다.
-
-![t-SNE 시각화](./flower_results/tsne_visualization.png)
-
-### 5. 클래스 활성화 맵 (CAM)
-
-모델이 이미지의 어떤 부분에 주목하는지 히트맵으로 시각화합니다.
-
-![클래스 활성화 맵](./flower_results/class_activation_maps.png)
-
-## 시각화 예시
-
-- **혼동 행렬**: 각 클래스의 예측 정확도와 오류 패턴을 시각화
-- **ROC 커브**: 이진 분류기의 성능을 다양한 임계값에서 평가
-- **t-SNE 시각화**: 고차원 특성을 2D 공간에 매핑하여 클래스 간 관계 시각화
-- **클래스 활성화 맵**: 모델이 이미지에서 주목하는 영역을 히트맵으로 시각화
-
-## 확장 및 커스터마이징
-
-- **새 데이터셋 추가**: `data/dataset.py` 모듈 확장
-- **다른 모델 아키텍처 지원**: `model/classifier.py`에 다른 모델 통합
-- **추가 시각화**: `model/utils/visualization.py`에 새 시각화 기법 추가
-- **UI 사용자 정의**: `ui/` 디렉토리의 구성 요소 수정
 
 ## 라이선스
 
